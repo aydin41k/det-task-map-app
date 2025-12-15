@@ -1,0 +1,19 @@
+**/node_modules
+**/npm-debug.log
+**/yarn-error.log
+**/package-lock.json # Optional: Remove this line if you WANT to version lockfiles (Recommended to keep lockfiles, but some prefer ignoring)
+
+server/dist/
+server/.env
+server/database.sqlite
+server/database.sqlite-journal
+
+client/dist/
+client/.env.local
+client/.env.*.local
+
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
