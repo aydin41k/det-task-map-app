@@ -1,9 +1,9 @@
-# DoE Coding Task
+# DET Coding Task
 
 ## Requirements
-- Present a street-view map and allow the user to select a loca!on.
-- Capture that loca!on address into a database.
-- Add capability to view all past selected loca!on addresses.
+- Present a street-view map and allow the user to select a location.
+- Capture that location address into a database.
+- Add capability to view and delete all past selected location addresses.
 
 Technical requirements:
 - Database: SQLite
@@ -31,6 +31,13 @@ cd server
 npm install
 ```
 
+Install front end dependencies:
+
+```bash
+cd client
+npm install
+```
+
 ### Run
 
 Start the API server:
@@ -41,6 +48,15 @@ npm start
 ```
 
 By default it runs on `http://localhost:3000`.
+
+Start the front end dev server:
+
+```bash
+cd client
+npm run dev
+```
+
+By default it runs on `http://localhost:5173`. The front end proxies `/api` requests to the backend at `http://localhost:3000`, so ensure the backend is running as well.
 
 #### Configuration
 
@@ -59,6 +75,15 @@ Run backend tests from the `server/` folder:
 
 ```bash
 cd server
+npm test
+```
+
+### Tests (front end)
+
+Run front end tests from the `client/` folder:
+
+```bash
+cd client
 npm test
 ```
 
