@@ -26,9 +26,10 @@ interface UserLocationAttributes {
 }
 interface UserLocationCreationAttributes extends Optional<UserLocationAttributes, 'id'> {}
 
-const sequelize = new Sequelize({
+export const sequelize = new Sequelize({
   dialect: 'sqlite',
-  storage: path.join(__dirname, 'database.sqlite'),
+  // When testing, we will use in-memory DB
+  storage: process.env.NODE_ENV === 'test' ? ':memory:' : path.join(__dirname, 'database.sqlite'),
   logging: false
 });
 

@@ -53,6 +53,15 @@ cd server
 PORT=4000 npm start
 ```
 
+### Tests (backend)
+
+Run backend tests from the `server/` folder:
+
+```bash
+cd server
+npm test
+```
+
 ### API
 
 All routes are under the `/api` prefix.
@@ -126,3 +135,4 @@ The server uses **SQLite** stored at `server/database.sqlite`.
 
 - Tables are automatically created/updated on server start (via Sequelize `sync()`).
 - If you delete `server/database.sqlite`, the server will recreate it on next run (you’ll lose saved history).
+
