@@ -1,10 +1,11 @@
 <template>
-  <div class="map-wrapper">
+  <div class="relative h-[70vh] min-h-[520px] w-full lg:h-[calc(100vh-7.5rem)]">
     <l-map
       ref="map"
       v-model:zoom="zoom"
       :center="center"
       :use-global-leaflet="false"
+      class="h-full w-full"
       @ready="onMapReady"
       @click="handleMapClick"
     >
@@ -31,33 +32,40 @@
         />
 
         <l-popup :options="{ closeButton: false, autoClose: false, closeOnClick: false }">
-          <div class="draft-popup">
-            <div v-if="loading">Scanning address...</div>
+          <div class="min-w-[200px] text-center">
+            <div v-if="loading" class="text-sm font-medium text-slate-100">Looking up address…</div>
             <div v-else>
-              <p class="draft-address">{{ draftLocation.address }}</p>
-              <div v-if="isAlreadySaved" class="already-saved">
-                <span class="saved-label">✓ Already saved</span>
-                <button @click.stop="cancelDraft" class="btn btn-cancel">Close</button>
+              <p class="mb-2 text-sm font-semibold text-white">{{ draftLocation.address }}</p>
+              <div v-if="isAlreadySaved" class="flex flex-col items-center gap-2">
+                <span class="text-xs font-semibold text-emerald-300">✓ Already saved</span>
+                <button @click.stop="cancelDraft" class="btn-secondary w-full" type="button">Close</button>
               </div>
-              <div v-else class="draft-actions">
-                <button @click.stop="saveDraft" class="btn btn-save">Save</button>
-                <button @click.stop="cancelDraft" class="btn btn-cancel">Cancel</button>
+              <div v-else class="flex gap-2">
+                <button @click.stop="saveDraft" class="btn-primary flex-1" type="button">Save</button>
+                <button @click.stop="cancelDraft" class="btn-danger flex-1" type="button">Cancel</button>
               </div>
             </div>
           </div>
         </l-popup>
       </l-marker>
     </l-map>
+
+    <div class="pointer-events-none absolute left-3 top-3 hidden sm:block">
+      <div class="glass-panel rounded-2xl px-3 py-2">
+        <div class="text-xs font-semibold text-white">Tip</div>
+        <div class="text-xs text-slate-300">Click anywhere to drop a pin.</div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-    import { ref, computed, watch, nextTick } from 'vue'
+    import { computed, nextTick, ref, watch } from 'vue'
     import { useStore } from 'vuex'
-    import { key } from '../store'
     import axios from 'axios'
-    import { LMap, LTileLayer, LMarker, LPopup, LIcon } from '@vue-leaflet/vue-leaflet'
+    import { LIcon, LMap, LMarker, LPopup, LTileLayer } from '@vue-leaflet/vue-leaflet'
     import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
+    import { key } from '../store'
     import type { LocationRecord, MapClickEvent } from '../types'
 
     const props = defineProps<{
@@ -107,52 +115,50 @@
     )
 
     const onMapReady = (leafletMap: any) => {
-        // Leaflet can calculate an incorrect size during initial flex layout; workaround
+        // Leaflet may calculate an incorrect size during initial flex layout; workaround
         setTimeout(() => leafletMap?.invalidateSize?.(), 0)
 
         if (props.centerCoords) {
-            leafletMap?.setView?.([props.centerCoords.lat, props.centerCoords.lng], zoom.value, {
-                animate: false,
-            })
+            leafletMap?.setView?.([props.centerCoords.lat, props.centerCoords.lng], zoom.value, { animate: false })
         }
     }
 
     const onDraftMarkerReady = (markerInstance: any) => {
-        // UX is better if we allow popup child component to fully attach
-        setTimeout(() => {
-            markerInstance.openPopup()
-        }, 50)
+    // UX is better if we allow popup child component to fully attach
+    setTimeout(() => {
+        markerInstance.openPopup()
+    }, 50)
     }
 
     const handleMapClick = async (e: MapClickEvent) => {
-        const { lat, lng } = e.latlng
+    const { lat, lng } = e.latlng
 
-        // Clear the old pin
-        draftLocation.value = null
-        await nextTick()
+    // Clear the old pin
+    draftLocation.value = null
+    await nextTick()
 
-        // Set new draft location
-        draftLocation.value = { lat, lng, address: 'Loading...' }
-        loading.value = true
+    // Set new draft location
+    draftLocation.value = { lat, lng, address: 'Loading…' }
+    loading.value = true
 
-        try {
-            const res = await axios.get<{ address: string }>(`/api/geocode?lat=${lat}&lng=${lng}`)
-            if (draftLocation.value) {
-                draftLocation.value.address = res.data.address || 'Unknown Location'
-            }
-        } catch (err) {
-            if (draftLocation.value) {
-                draftLocation.value.address = 'Address lookup failed'
-            }
-        } finally {
-            loading.value = false
+    try {
+        const res = await axios.get<{ address: string }>(`/api/geocode?lat=${lat}&lng=${lng}`)
+        if (draftLocation.value) {
+        draftLocation.value.address = res.data.address || 'Unknown location'
         }
+    } catch (err) {
+        if (draftLocation.value) {
+        draftLocation.value.address = 'Address lookup failed'
+        }
+    } finally {
+        loading.value = false
+    }
     }
 
     const saveDraft = async () => {
         if (draftLocation.value) {
             await store.dispatch('saveLocation', draftLocation.value)
-            draftLocation.value = null // Clear draft, replaced by history pin
+            draftLocation.value = null // Clear draft, replace by history pin
         }
     }
 
@@ -160,59 +166,3 @@
         draftLocation.value = null
     }
 </script>
-
-<style scoped>
-    .map-wrapper {
-        flex-grow: 1;
-        height: 100vh;
-        position: relative;
-        z-index: 1;
-    }
-
-    .draft-popup {
-        text-align: center;
-        min-width: 160px;
-    }
-
-    .draft-address {
-        margin: 5px 0 10px;
-        font-weight: bold;
-        font-size: 13px;
-    }
-
-    .draft-actions {
-        display: flex;
-        gap: 8px;
-        justify-content: center;
-    }
-
-    .btn {
-        border: none;
-        padding: 5px 10px;
-        border-radius: 4px;
-        cursor: pointer;
-        color: white;
-        font-size: 12px;
-    }
-
-    .btn-save {
-        background: #28a745;
-    }
-
-    .btn-cancel {
-        background: #dc3545;
-    }
-
-    .already-saved {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        align-items: center;
-    }
-
-    .saved-label {
-        color: #28a745;
-        font-weight: bold;
-        font-size: 12px;
-    }
-</style>

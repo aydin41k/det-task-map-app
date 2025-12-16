@@ -1,33 +1,52 @@
 <template>
-  <div class="sidebar">
-    <div class="header">
-      <h2>History</h2>
+  <div class="flex h-full flex-col">
+    <div class="border-b border-white/10 px-5 py-4">
+      <div class="flex items-center justify-between gap-3">
+        <h2 class="text-base font-semibold text-white">History</h2>
+        <span class="rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium text-slate-200">
+          {{ history.length }}
+        </span>
+      </div>
+      <p class="mt-1 text-sm text-slate-300">Your saved locations for this session.</p>
     </div>
 
-    <div v-if="history.length === 0" class="empty-state">
-      <p>No locations saved.</p>
-      <small>Click the map to add one!</small>
-    </div>
-
-    <ul class="history-list">
-      <li
-        v-for="(loc, index) in history"
-        :key="loc.id || index"
-        class="history-item"
-        @click="centerMap(loc)"
-      >
-        <span class="icon">📍</span>
-        <div class="details">
-          <div class="address">{{ loc.address }}</div>
-          <div class="coords">{{ loc.lat.toFixed(4) }}, {{ loc.lng.toFixed(4) }}</div>
+    <div v-if="history.length === 0" class="grid flex-1 place-items-center px-6 py-10">
+      <div class="text-center">
+        <div class="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-sky-400/15 border border-sky-300/20">
+          <span class="text-xl">📍</span>
         </div>
+        <p class="text-sm font-semibold text-white">No locations saved yet</p>
+        <p class="mt-1 text-sm text-slate-300">Click the map to add your first pin.</p>
+      </div>
+    </div>
+
+    <ul v-else class="flex-1 overflow-y-auto p-2 [scrollbar-gutter:stable]">
+      <li v-for="(loc, index) in history" :key="loc.id || index">
+        <button
+          type="button"
+          class="group flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition-colors hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/60"
+          @click="centerMap(loc)"
+        >
+          <span class="mt-0.5 grid h-9 w-9 place-items-center rounded-xl bg-white/10 border border-white/10">
+            <span class="text-base">📍</span>
+          </span>
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-sm font-semibold text-white">{{ loc.address }}</span>
+            <span class="mt-0.5 block font-mono text-[12px] text-slate-300">
+              {{ loc.lat.toFixed(4) }}, {{ loc.lng.toFixed(4) }}
+            </span>
+          </span>
+          <span class="mt-1 text-xs text-slate-400 opacity-0 transition-opacity group-hover:opacity-100">
+            Centre
+          </span>
+        </button>
       </li>
     </ul>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { useStore } from 'vuex'
 import { key } from '../store'
 import type { LocationRecord } from '../types'
@@ -40,76 +59,8 @@ const emit = defineEmits<{
 const store = useStore(key)
 
 const history = computed(() => store.getters.history as LocationRecord[])
-const sessionUuid = computed(() => store.state.session_uuid)
-const shortSessionId = computed(() =>
-  sessionUuid.value ? sessionUuid.value.slice(0, 8) + '...' : '',
-)
 
 const centerMap = (loc: LocationRecord) => {
   emit('center-map', { lat: loc.lat, lng: loc.lng })
 }
-
-onMounted(() => {
-  store.dispatch('initSession')
-  store.dispatch('fetchHistory')
-})
 </script>
-
-<style scoped>
-.sidebar {
-  width: 320px;
-  background: #fff;
-  border-right: 1px solid #ddd;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
-  z-index: 1000;
-}
-.header {
-  padding: 20px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #eee;
-}
-.header h2 {
-  margin: 0 0 5px 0;
-  font-size: 1.2rem;
-}
-.empty-state {
-  padding: 40px;
-  text-align: center;
-  color: #888;
-}
-.history-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  overflow-y: auto;
-  flex-grow: 1;
-}
-.history-item {
-  display: flex;
-  padding: 15px;
-  border-bottom: 1px solid #f0f0f0;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.history-item:hover {
-  background: #f1f8ff;
-}
-.icon {
-  margin-right: 10px;
-  font-size: 1.2rem;
-}
-.address {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: #333;
-  margin-bottom: 4px;
-}
-.coords {
-  font-size: 0.75rem;
-  color: #666;
-  font-family: monospace;
-}
-</style>
