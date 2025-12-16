@@ -30,6 +30,10 @@ export const store = createStore<State>({
     ADD_LOCATION(state: State, location: LocationRecord) {
       state.history.unshift(location)
     },
+
+    REMOVE_LOCATION(state: State, id: number | string) {
+      state.history = state.history.filter((loc) => loc.id !== id)
+    },
   },
   actions: {
     initSession({ commit, state }: { commit: Commit; state: State }) {
@@ -57,12 +61,38 @@ export const store = createStore<State>({
           lng: payload.lng,
           address: payload.address,
         }
-        await axios.post('/api/location', body)
+        const res = await axios.post<{ success: boolean; entry: { id: number; createdAt?: string } }>(
+          '/api/location',
+          body,
+        )
 
-        // Optimistic update
-        commit('ADD_LOCATION', { ...body, id: Date.now().toString() })
+        commit('ADD_LOCATION', {
+          id: res.data.entry?.id ?? Date.now(),
+          lat: payload.lat,
+          lng: payload.lng,
+          address: payload.address,
+          date: res.data.entry?.createdAt,
+        })
       } catch (error) {
         console.error('Save location failed:', error)
+      }
+    },
+
+    async deleteLocation({ state, commit }: { state: State; commit: Commit }, id: number | string) {
+      if (!state.session_uuid) return
+
+      
+
+      if (typeof id === 'string') {
+        commit('REMOVE_LOCATION', id)
+        return
+      }
+
+      try {
+        await axios.delete(`/api/location/${id}`, { data: { session_uuid: state.session_uuid } })
+        commit('REMOVE_LOCATION', id)
+      } catch (error) {
+        console.error('Delete location failed:', error)
       }
     },
   },

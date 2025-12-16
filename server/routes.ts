@@ -100,4 +100,40 @@ router.get('/history/:session_uuid', async (req: Request, res: Response) => {
   }
 });
 
+router.delete('/location/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { session_uuid } = req.body as { session_uuid?: string };
+
+  if (!session_uuid) {
+    res.status(400).json({ error: 'Missing session ID' });
+    return;
+  }
+
+  const entryId = Number(id);
+  if (!Number.isFinite(entryId)) {
+    res.status(400).json({ error: 'Invalid ID' });
+    return;
+  }
+
+  try {
+    const user = await User.findOne({ where: { session_uuid } });
+    if (!user) {
+      res.status(404).json({ error: 'Unknown session' });
+      return;
+    }
+
+    const entry = await UserLocation.findOne({ where: { id: entryId, UserId: user.id } });
+    if (!entry) {
+      res.status(404).json({ error: 'Not found' });
+      return;
+    }
+
+    await entry.destroy();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete error:', error);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
 export default router;

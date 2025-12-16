@@ -22,24 +22,35 @@
 
     <ul v-else class="flex-1 overflow-y-auto p-2 [scrollbar-gutter:stable]">
       <li v-for="(loc, index) in history" :key="loc.id || index">
-        <button
-          type="button"
-          class="group flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition-colors hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/60"
-          @click="centerMap(loc)"
+        <div
+          class="group flex items-start gap-2 rounded-2xl px-3 py-3 transition-colors hover:bg-white/10"
         >
-          <span class="mt-0.5 grid h-9 w-9 place-items-center rounded-xl bg-white/10 border border-white/10">
-            <span class="text-base">📍</span>
-          </span>
-          <span class="min-w-0 flex-1">
-            <span class="block truncate text-sm font-semibold text-white">{{ loc.address }}</span>
-            <span class="mt-0.5 block font-mono text-[12px] text-slate-300">
-              {{ loc.lat.toFixed(4) }}, {{ loc.lng.toFixed(4) }}
+          <button
+            type="button"
+            class="flex min-w-0 flex-1 items-start gap-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/60 rounded-2xl"
+            @click="centerMap(loc)"
+          >
+            <span class="mt-0.5 grid h-9 w-9 place-items-center rounded-xl bg-white/10 border border-white/10">
+              <span class="text-base">📍</span>
             </span>
-          </span>
-          <span class="mt-1 text-xs text-slate-400 opacity-0 transition-opacity group-hover:opacity-100">
-            Centre
-          </span>
-        </button>
+            <span class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-semibold text-white">{{ loc.address }}</span>
+              <span class="mt-0.5 block font-mono text-[12px] text-slate-300">
+                {{ loc.lat.toFixed(4) }}, {{ loc.lng.toFixed(4) }}
+              </span>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            class="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-200 transition-colors hover:bg-rose-500/20 hover:text-rose-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/60"
+            title="Delete"
+            aria-label="Delete saved location"
+            @click.stop="deleteLoc(loc)"
+          >
+            <span aria-hidden="true" class="text-base leading-none">🗑️</span>
+          </button>
+        </div>
       </li>
     </ul>
   </div>
@@ -62,5 +73,12 @@ const history = computed(() => store.getters.history as LocationRecord[])
 
 const centerMap = (loc: LocationRecord) => {
   emit('center-map', { lat: loc.lat, lng: loc.lng })
+}
+
+const deleteLoc = async (loc: LocationRecord) => {
+  if (loc.id == null) return
+  const ok = window.confirm('Delete this saved location?')
+  if (!ok) return
+  await store.dispatch('deleteLocation', loc.id)
 }
 </script>
