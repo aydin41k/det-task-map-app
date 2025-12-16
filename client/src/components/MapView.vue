@@ -5,6 +5,7 @@
       v-model:zoom="zoom"
       :center="center"
       :use-global-leaflet="false"
+      @ready="onMapReady"
       @click="handleMapClick"
     >
       <l-tile-layer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"></l-tile-layer>
@@ -71,6 +72,7 @@
     const draftLocation = ref<LocationRecord | null>(null)
     const loading = ref<boolean>(false)
 
+    const map = ref<any>(null)
     const draftMarker = ref<any>(null)
 
     const history = computed(() => store.getters.history as LocationRecord[])
@@ -82,13 +84,38 @@
 
     watch(
         () => props.centerCoords,
-        (newCoords) => {
-            if (newCoords) {
-                center.value = [newCoords.lat, newCoords.lng]
-                zoom.value = 16
+        async (newCoords) => {
+            if (!newCoords) return
+
+            const nextCenter: [number, number] = [newCoords.lat, newCoords.lng]
+            const nextZoom = 16
+
+            const leafletMap = map.value?.leafletObject
+            if (leafletMap?.setView) {
+                leafletMap.setView(nextCenter, nextZoom, { animate: false })
+                center.value = nextCenter
+                zoom.value = nextZoom
+                return
             }
+
+            // Fallback if the map isn't ready yet
+            center.value = nextCenter
+            zoom.value = nextZoom
+            await nextTick()
+            map.value?.leafletObject?.setView?.(nextCenter, nextZoom, { animate: false })
         },
     )
+
+    const onMapReady = (leafletMap: any) => {
+        // Leaflet can calculate an incorrect size during initial flex layout; workaround
+        setTimeout(() => leafletMap?.invalidateSize?.(), 0)
+
+        if (props.centerCoords) {
+            leafletMap?.setView?.([props.centerCoords.lat, props.centerCoords.lng], zoom.value, {
+                animate: false,
+            })
+        }
+    }
 
     const onDraftMarkerReady = (markerInstance: any) => {
         // UX is better if we allow popup child component to fully attach
